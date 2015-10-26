@@ -8,11 +8,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 )
 
@@ -95,7 +93,7 @@ func bundleAssets() {
 		assetUrl := strings.Replace(filePath, publicAssetPath, train.Config.AssetsUrl, 1)
 		fileExt := path.Ext(filePath)
 		switch fileExt {
-		case ".js", ".css":
+			case ".js", ".css":
 			if hasRequireDirectives(filePath) {
 				content, err := train.ReadAsset(assetUrl)
 				if err != nil {
@@ -104,7 +102,7 @@ func bundleAssets() {
 				}
 				ioutil.WriteFile(filePath, []byte(content), os.ModeDevice)
 			}
-		case ".sass", ".scss", ".coffee":
+			case ".sass", ".scss", ".coffee":
 			if path.Base(filePath)[0] == '_' {
 				return nil
 			}
@@ -118,7 +116,7 @@ func bundleAssets() {
 			compiledPath := strings.Replace(filePath, fileExt, mapCompiledExt[fileExt], 1)
 			os.Create(compiledPath)
 			ioutil.WriteFile(compiledPath, []byte(content), os.ModeDevice)
-		default:
+			default:
 			return nil
 		}
 		return nil
@@ -147,21 +145,23 @@ func compress(files []string, option string) {
 		return
 	}
 
-	_, err := exec.LookPath("java")
-	if err != nil {
-		fmt.Println("You don't have Java installed.")
-		return
-	}
-
 	fmt.Println(files)
 
-	_, filename, _, _ := runtime.Caller(1)
-	pkgPath := path.Dir(filename)
-	yuicompressor := pkgPath + "/" + CompressorFileName
-	var out string
-	if out, err = bash("java -jar " + yuicompressor + " -o '" + option + "' " + strings.Join(files, " ")); err != nil {
-		fmt.Println("YUI Compressor error:", out)
-		panic(err)
+	var (
+		out string
+		err error
+	)
+
+	if strings.HasSuffix(files[0], ".js") {
+		if out, err = bash("uglifyjs --compress --mangle --verbose -- " + strings.Join(files, " ")); err != nil {
+			fmt.Println("UglifyJS2 Compressor error:", out)
+			panic(err)
+		}
+	} else {
+		if out, err = bash("cleancss " + strings.Join(files, " ")); err != nil {
+			fmt.Println("cleancss error:", out)
+			panic(err)
+		}
 	}
 }
 
@@ -173,9 +173,9 @@ func getCompiledAssets(filter *regexp.Regexp) (jsFiles []string, cssFiles []stri
 			return nil
 		}
 		switch fileExt {
-		case ".js":
+			case ".js":
 			jsFiles = append(jsFiles, filePath)
-		case ".css":
+			case ".css":
 			cssFiles = append(cssFiles, filePath)
 		}
 		return nil

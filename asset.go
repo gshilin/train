@@ -139,7 +139,7 @@ var mapAlterExtensions = map[string]string{
 	".css":    ".sass|.scss",
 	".sass":   ".scss|.css",
 	".scss":   ".sass|.css",
-	".js":     ".coffee",
+	".js":     ".coffee|.js.coffee",
 	".coffee": ".js",
 }
 
@@ -150,9 +150,17 @@ var mapAlterExtensions = map[string]string{
 // or url alternation exist
 // => javascript/asset.coffee
 func ResolvePath(assetUrl string) (assetPath string) {
+	fileExt := path.Ext(assetUrl)
+	if assetUrl[0] != '/' {
+		switch fileExt {
+			case ".js", ".coffee":
+				assetUrl = Config.AssetsUrl + "/javascripts/" + assetUrl
+			case ".css", ".sass", ".scss":
+				assetUrl = Config.AssetsUrl + "/javascripts/" + assetUrl
+		}
+	}
 	assetPath = string(strings.Replace(assetUrl, Config.AssetsUrl, "", 1))
 	assetPath = path.Clean(Config.AssetsPath + "/" + assetPath)
-	fileExt := path.Ext(assetPath)
 	alterExts, hasAlterExt := mapAlterExtensions[fileExt]
 	if !isFileExist(assetPath) && hasAlterExt {
 		for _, alterExt := range strings.Split(alterExts, "|") {

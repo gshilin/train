@@ -14,7 +14,7 @@ var outPath string
 func main() {
 	flag.BoolVar(&helpFlag, "h", false, "")
 	flag.StringVar(&sourcePath, "source", "./assets", "")
-	flag.StringVar(&outPath, "out", "./public", "")
+	flag.StringVar(&outPath, "out", "public", "")
 	flag.Parse()
 
 	command := "bundle"
